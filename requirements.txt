@@ -1,0 +1,33 @@
+# Provedores de IA
+google-generativeai>=0.8.0
+openai>=1.30.0
+groq>=0.9.0
+anthropic>=0.25.0
+
+# Leitura de PDFs
+pdfplumber>=0.10.0
+pypdf>=4.0.0
+
+# Utilitários
+python-dotenv>=1.0.0
+requests>=2.31.0
+pandas>=2.0.0
+loguru>=0.7.0
+rich>=13.0.0
+
+# Geração de relatórios
+reportlab>=4.0.0
+markdown>=3.5.0
+
+# Web Frontend
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+websockets>=13.0
+jinja2>=3.1.0
+python-multipart>=0.0.9
+itsdangerous>=2.1.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
+
+# Armazenamento de memória vetorial (fase 2)
+# chromadb>=0.4.0

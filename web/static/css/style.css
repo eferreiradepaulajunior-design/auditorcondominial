@@ -1,0 +1,138 @@
+/* ── Chat custom styles ────────────────────────────────────── */
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Sidebar scrollbar */
+aside ::-webkit-scrollbar-thumb {
+    background: #475569;
+}
+
+/* Message bubbles */
+.message-user {
+    display: flex;
+    justify-content: flex-end;
+}
+.message-user .bubble {
+    background: #2563eb;
+    color: white;
+    border-radius: 1rem 1rem 0.25rem 1rem;
+    padding: 0.75rem 1rem;
+    max-width: 75%;
+    word-break: break-word;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    font-size: 0.875rem;
+}
+
+.message-assistant {
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.5rem;
+}
+.message-assistant .avatar {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+}
+.message-assistant .bubble {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-radius: 1rem 1rem 1rem 0.25rem;
+    padding: 0.75rem 1rem;
+    max-width: 75%;
+    word-break: break-word;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    font-size: 0.875rem;
+}
+
+.message-time {
+    font-size: 0.625rem;
+    color: #94a3b8;
+    margin-top: 0.25rem;
+}
+
+/* Typing animation */
+.typing-dots .dot {
+    animation: typing-bounce 1.4s infinite;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+.typing-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+    0%, 60%, 100% { opacity: 0.2; }
+    30% { opacity: 1; }
+}
+
+/* Textarea auto-resize */
+#message-input {
+    min-height: 44px;
+    max-height: 120px;
+}
+
+/* Active agent in sidebar */
+.agent-btn.active-agent {
+    background: rgba(59, 130, 246, 0.25);
+    border-left: 3px solid #3b82f6;
+}
+
+/* Message markdown-like formatting */
+.bubble strong, .bubble b {
+    font-weight: 700;
+}
+.bubble em, .bubble i {
+    font-style: italic;
+}
+
+/* File upload indicator */
+.upload-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    color: #1e40af;
+}
+
+/* Smooth transitions */
+.agent-btn {
+    transition: all 0.15s ease;
+}
+
+/* Welcome message fade */
+.welcome-fade {
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Message entrance */
+.message-enter {
+    animation: messageSlide 0.3s ease;
+}
+
+@keyframes messageSlide {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

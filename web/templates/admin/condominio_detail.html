@@ -1,0 +1,566 @@
+{% extends "base.html" %}
+{% block title %}{{ config.get('nome', cond_id) }} - Auditor Contábil{% endblock %}
+
+{% block body %}
+<div class="flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-sidebar text-white flex flex-col">
+        <div class="p-4 border-b border-slate-700">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🏢</span>
+                <div>
+                    <h1 class="font-bold text-lg">Auditor Contábil</h1>
+                    <p class="text-xs text-slate-400">Gestão de Documentos</p>
+                </div>
+            </div>
+        </div>
+        <nav class="flex-1 p-3 space-y-1">
+            <a href="/admin?tab=condominios"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-sidebar-hover transition">
+                <span>←</span> <span>Voltar aos Condomínios</span>
+            </a>
+            <div class="border-t border-slate-700 my-3"></div>
+            <div class="px-3 py-2 text-xs text-slate-400 uppercase tracking-wider">Categorias</div>
+            {% for cat_id, cat_data in docs_by_category.items() %}
+            <a href="#cat-{{ cat_id }}"
+               class="flex items-center justify-between px-3 py-2 rounded-lg hover:bg-sidebar-hover transition text-sm">
+                <span>{{ cat_data.label }}</span>
+                {% if cat_data.files %}
+                <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">{{ cat_data.files|length }}</span>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </nav>
+        <div class="p-3 border-t border-slate-700 space-y-1">
+            <a href="/admin/pipeline"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-sidebar-hover transition">
+                <span>📊</span> <span>Kanban Pipeline</span>
+            </a>
+            <a href="/chat" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-sidebar-hover transition">
+                <span>💬</span> <span>Voltar ao Chat</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto bg-gray-50">
+        <div class="max-w-5xl mx-auto p-8">
+
+            {% if request.query_params.get('saved') %}
+            <div class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+                ✅ Alterações salvas com sucesso!
+            </div>
+            {% endif %}
+
+            {% if request.query_params.get('audit_started') %}
+            <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+                🚀 Auditoria iniciada! <a href="/admin/pipeline" class="underline font-semibold">Acompanhe no Kanban →</a>
+            </div>
+            {% endif %}
+
+            <!-- Pipeline Status Banner -->
+            <div id="pipeline-banner" class="hidden mb-6"></div>
+
+            <!-- Header do condomínio -->
+            <div class="bg-white rounded-2xl p-6 shadow-sm border mb-6">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center">
+                            <span class="text-3xl">🏢</span>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">{{ config.get('nome', cond_id) }}</h1>
+                            <p class="text-gray-500">
+                                {% if config.get('cnpj') %}CNPJ: {{ config.cnpj }} · {% endif %}
+                                {{ config.get('unidades', 0) }} unidades
+                            </p>
+                            {% if config.get('endereco') %}
+                            <p class="text-sm text-gray-400 mt-1">📍 {{ config.endereco }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="document.getElementById('modal-editar').classList.remove('hidden')"
+                                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition text-sm font-medium">
+                            ✏️ Editar
+                        </button>
+                        <button onclick="document.getElementById('modal-upload').classList.remove('hidden')"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition text-sm font-semibold">
+                            📤 Enviar Documentos
+                        </button>
+                        <form method="POST" action="/admin/pipeline/start/{{ cond_id }}" id="form-audit">
+                            <button type="submit" id="btn-audit"
+                                    class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition text-sm font-semibold">
+                                🚀 Iniciar Auditoria
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Info cards -->
+                <div class="grid grid-cols-4 gap-4 mt-6">
+                    <div class="bg-blue-50 rounded-xl p-4 text-center">
+                        <p class="text-2xl font-bold text-blue-700">{{ total_docs }}</p>
+                        <p class="text-xs text-blue-600">Documentos</p>
+                    </div>
+                    <div class="bg-green-50 rounded-xl p-4 text-center">
+                        <p class="text-2xl font-bold text-green-700">{{ config.get('unidades', 0) }}</p>
+                        <p class="text-xs text-green-600">Unidades</p>
+                    </div>
+                    <div class="bg-purple-50 rounded-xl p-4 text-center">
+                        <p class="text-sm font-semibold text-purple-700 truncate">{{ config.get('sindico_atual', '-') }}</p>
+                        <p class="text-xs text-purple-600">Síndico</p>
+                    </div>
+                    <div class="bg-orange-50 rounded-xl p-4 text-center">
+                        <p class="text-sm font-semibold text-orange-700 truncate">{{ config.get('administradora', '-') }}</p>
+                        <p class="text-xs text-orange-600">Administradora</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentos por categoria -->
+            {% for cat_id, cat_data in docs_by_category.items() %}
+            <div id="cat-{{ cat_id }}" class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-semibold text-gray-700">{{ cat_data.label }}</h3>
+                    <span class="text-sm text-gray-400">{{ cat_data.files|length }} arquivo(s)</span>
+                </div>
+
+                {% if cat_data.files %}
+                <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b">
+                            <tr>
+                                <th class="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Arquivo</th>
+                                <th class="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Tamanho</th>
+                                <th class="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase">Modificado</th>
+                                <th class="text-right px-5 py-3 text-xs font-medium text-gray-500 uppercase">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            {% for file in cat_data.files %}
+                            <tr class="hover:bg-gray-50 transition" id="row-{{ cat_id }}-{{ loop.index }}">
+                                <td class="px-5 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-lg">
+                                            {% if file.ext in ['.pdf'] %}📕
+                                            {% elif file.ext in ['.xlsx', '.xls', '.csv', '.ods'] %}📗
+                                            {% elif file.ext in ['.xml'] %}📘
+                                            {% elif file.ext in ['.doc', '.docx', '.odt', '.txt'] %}📄
+                                            {% elif file.ext in ['.jpg', '.jpeg', '.png'] %}🖼️
+                                            {% else %}📎{% endif %}
+                                        </span>
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-800">{{ file.name }}</p>
+                                            <p class="text-xs text-gray-400 uppercase">{{ file.ext[1:] }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-5 py-3 text-sm text-gray-500">{{ file.size }}</td>
+                                <td class="px-5 py-3 text-sm text-gray-500">{{ file.modified }}</td>
+                                <td class="px-5 py-3 text-right">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a href="/admin/condominios/{{ cond_id }}/download/{{ file.category }}/{{ file.name }}"
+                                           class="px-3 py-1.5 text-xs bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition font-medium">
+                                            ⬇️ Baixar
+                                        </a>
+                                        <button onclick="deleteDoc('{{ file.category }}', '{{ file.name }}', 'row-{{ cat_id }}-{{ loop.index }}')"
+                                                class="px-3 py-1.5 text-xs bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition font-medium">
+                                            🗑️ Excluir
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="bg-white rounded-xl p-6 shadow-sm border text-center text-gray-400 text-sm">
+                    Nenhum documento nesta categoria.
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            {% if total_docs == 0 %}
+            <div class="bg-white rounded-xl p-12 shadow-sm border text-center">
+                <span class="text-5xl mb-4 block">📁</span>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Nenhum documento enviado</h3>
+                <p class="text-gray-500 mb-6">Envie os documentos do condomínio para iniciar a auditoria:<br>
+                    balancetes, contratos, atas, notas fiscais, extratos, etc.</p>
+                <button onclick="document.getElementById('modal-upload').classList.remove('hidden')"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition">
+                    📤 Enviar Documentos
+                </button>
+            </div>
+            {% endif %}
+
+        </div>
+    </main>
+</div>
+
+<!-- Modal: Upload de Documentos -->
+<div id="modal-upload" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+        <div class="p-6 border-b">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-800">📤 Enviar Documentos</h3>
+                <button onclick="document.getElementById('modal-upload').classList.add('hidden')"
+                        class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                <select id="upload-category"
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    {% for cat_id, cat_name in doc_categories.items() %}
+                    <option value="{{ cat_id }}">{{ cat_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Arquivos</label>
+                <div id="drop-zone"
+                     class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-blue-50/50 transition cursor-pointer"
+                     onclick="document.getElementById('file-input').click()">
+                    <span class="text-4xl block mb-2">📁</span>
+                    <p class="text-gray-600 font-medium">Clique para selecionar ou arraste arquivos aqui</p>
+                    <p class="text-xs text-gray-400 mt-2">PDF, Excel, XML, Word, imagens e mais</p>
+                </div>
+                <input type="file" id="file-input" multiple class="hidden"
+                       accept=".pdf,.xlsx,.xls,.csv,.xml,.doc,.docx,.jpg,.jpeg,.png,.txt,.json,.odt,.ods">
+                <div id="file-list" class="mt-3 space-y-2 max-h-40 overflow-y-auto"></div>
+            </div>
+            <div id="upload-progress" class="hidden">
+                <div class="bg-gray-200 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all" style="width: 0%"></div>
+                </div>
+                <p id="upload-status" class="text-sm text-gray-500 mt-2 text-center"></p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="document.getElementById('modal-upload').classList.add('hidden')"
+                        class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">
+                    Cancelar
+                </button>
+                <button id="btn-upload" onclick="uploadFiles()" disabled
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2.5 rounded-lg transition font-semibold">
+                    📤 Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Editar Condomínio -->
+<div id="modal-editar" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+        <div class="p-6 border-b">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-gray-800">✏️ Editar Condomínio</h3>
+                <button onclick="document.getElementById('modal-editar').classList.add('hidden')"
+                        class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+        </div>
+        <form method="POST" action="/admin/condominios/{{ cond_id }}/editar" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nome do Condomínio *</label>
+                <input type="text" name="nome" required value="{{ config.get('nome', '') }}"
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
+                    <input type="text" name="cnpj" value="{{ config.get('cnpj', '') }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Unidades</label>
+                    <input type="number" name="unidades" value="{{ config.get('unidades', 0) }}" min="0"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                <input type="text" name="endereco" value="{{ config.get('endereco', '') }}"
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Síndico Atual</label>
+                    <input type="text" name="sindico" value="{{ config.get('sindico_atual', '') }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Administradora</label>
+                    <input type="text" name="administradora" value="{{ config.get('administradora', '') }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('modal-editar').classList.add('hidden')"
+                        class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">
+                    Cancelar
+                </button>
+                <button type="submit"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg transition font-semibold">
+                    💾 Salvar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const COND_ID = '{{ cond_id }}';
+let selectedFiles = [];
+
+// File input
+const fileInput = document.getElementById('file-input');
+const dropZone = document.getElementById('drop-zone');
+
+fileInput.addEventListener('change', (e) => {
+    addFiles(e.target.files);
+});
+
+// Drag & drop
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-blue-400', 'bg-blue-50');
+});
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+});
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+    addFiles(e.dataTransfer.files);
+});
+
+function addFiles(files) {
+    for (const f of files) {
+        if (!selectedFiles.find(sf => sf.name === f.name && sf.size === f.size)) {
+            selectedFiles.push(f);
+        }
+    }
+    renderFileList();
+}
+
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    renderFileList();
+}
+
+function renderFileList() {
+    const container = document.getElementById('file-list');
+    const btn = document.getElementById('btn-upload');
+    btn.disabled = selectedFiles.length === 0;
+
+    if (selectedFiles.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = selectedFiles.map((f, i) => {
+        const size = f.size < 1024 * 1024
+            ? (f.size / 1024).toFixed(1) + ' KB'
+            : (f.size / (1024 * 1024)).toFixed(1) + ' MB';
+        return `
+            <div class="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-sm">📎</span>
+                    <span class="text-sm text-gray-700 truncate">${f.name}</span>
+                    <span class="text-xs text-gray-400 flex-shrink-0">${size}</span>
+                </div>
+                <button onclick="removeFile(${i})" class="text-red-400 hover:text-red-600 text-sm ml-2">✕</button>
+            </div>
+        `;
+    }).join('');
+}
+
+async function uploadFiles() {
+    if (selectedFiles.length === 0) return;
+
+    const category = document.getElementById('upload-category').value;
+    const btn = document.getElementById('btn-upload');
+    const progress = document.getElementById('upload-progress');
+    const progressBar = document.getElementById('progress-bar');
+    const status = document.getElementById('upload-status');
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+    progress.classList.remove('hidden');
+    progressBar.style.width = '10%';
+    status.textContent = `Enviando ${selectedFiles.length} arquivo(s)...`;
+
+    const formData = new FormData();
+    formData.append('category', category);
+    for (const f of selectedFiles) {
+        formData.append('files', f);
+    }
+
+    try {
+        progressBar.style.width = '50%';
+        const resp = await fetch(`/admin/condominios/${COND_ID}/upload`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        progressBar.style.width = '100%';
+        const result = await resp.json();
+
+        if (result.errors && result.errors.length > 0) {
+            status.textContent = `✅ ${result.count} enviado(s). ⚠️ ${result.errors.length} erro(s).`;
+            status.className = 'text-sm text-orange-600 mt-2 text-center';
+        } else {
+            status.textContent = `✅ ${result.count} arquivo(s) enviado(s) com sucesso!`;
+            status.className = 'text-sm text-green-600 mt-2 text-center';
+        }
+
+        setTimeout(() => location.reload(), 1500);
+    } catch (err) {
+        status.textContent = '❌ Erro ao enviar: ' + err.message;
+        status.className = 'text-sm text-red-600 mt-2 text-center';
+        btn.disabled = false;
+        btn.textContent = '📤 Enviar';
+    }
+}
+
+async function deleteDoc(category, filename, rowId) {
+    if (!confirm(`Excluir "${filename}"?`)) return;
+
+    const formData = new FormData();
+    formData.append('category', category);
+    formData.append('filename', filename);
+
+    try {
+        const resp = await fetch(`/admin/condominios/${COND_ID}/delete-doc`, {
+            method: 'POST',
+            body: formData,
+        });
+        if (resp.ok) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.style.opacity = '0';
+                row.style.transition = 'opacity 0.3s';
+                setTimeout(() => row.remove(), 300);
+            }
+        }
+    } catch (err) {
+        alert('Erro ao excluir: ' + err.message);
+    }
+}
+
+// ── Pipeline Status Polling ──
+const STAGE_LABELS = {
+    'extraction': '🔍 Extração', 'financial': '💰 Financeiro',
+    'contracts': '📝 Contratos', 'maintenance': '🔧 Manutenções',
+    'investment': '📈 Investimentos', 'compliance': '⚖️ Compliance',
+    'report': '📊 Relatório', 'done': '✅ Concluído'
+};
+const STAGE_ORDER = ['extraction','financial','contracts','maintenance','investment','compliance','report'];
+
+async function checkPipelineStatus() {
+    try {
+        const resp = await fetch(`/admin/pipeline/api/condominio/${COND_ID}`);
+        const p = await resp.json();
+        const banner = document.getElementById('pipeline-banner');
+        const btn = document.getElementById('btn-audit');
+
+        if (!p || p.status === 'none') {
+            banner.classList.add('hidden');
+            btn.disabled = false;
+            btn.textContent = '🚀 Iniciar Auditoria';
+            btn.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition text-sm font-semibold';
+            return;
+        }
+
+        banner.classList.remove('hidden');
+
+        if (p.status === 'running') {
+            const done = (p.stages_done || []).length;
+            const total = STAGE_ORDER.length;
+            const pct = Math.round(done / total * 100);
+            const currentLabel = STAGE_LABELS[p.current_stage] || p.current_stage;
+
+            banner.innerHTML = `
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="animate-spin text-lg">⏳</span>
+                            <span class="font-semibold text-blue-800">Auditoria em andamento</span>
+                        </div>
+                        <a href="/admin/pipeline" class="text-sm text-blue-600 hover:text-blue-800 font-medium">Ver Kanban →</a>
+                    </div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="flex-1 bg-blue-200 rounded-full h-2.5">
+                            <div class="bg-blue-600 h-2.5 rounded-full transition-all" style="width: ${pct}%"></div>
+                        </div>
+                        <span class="text-sm text-blue-700 font-medium">${done}/${total}</span>
+                    </div>
+                    <div class="flex gap-1.5 flex-wrap">
+                        ${STAGE_ORDER.map(s => {
+                            const isDone = (p.stages_done || []).includes(s);
+                            const isCurrent = p.current_stage === s;
+                            const cls = isDone ? 'bg-green-100 text-green-700 border-green-200' :
+                                        isCurrent ? 'bg-blue-200 text-blue-800 border-blue-300 animate-pulse' :
+                                        'bg-gray-100 text-gray-400 border-gray-200';
+                            return `<span class="text-xs px-2 py-1 rounded-lg border ${cls}">${STAGE_LABELS[s]}</span>`;
+                        }).join('')}
+                    </div>
+                </div>`;
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Em andamento...';
+            btn.className = 'bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-semibold cursor-not-allowed';
+
+            setTimeout(checkPipelineStatus, 2000);
+        } else if (p.status === 'done') {
+            banner.innerHTML = `
+                <div class="bg-green-50 border border-green-200 rounded-xl p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">✅</span>
+                            <span class="font-semibold text-green-800">Auditoria concluída</span>
+                        </div>
+                        <a href="/admin/pipeline" class="text-sm text-green-600 hover:text-green-800 font-medium">Ver Kanban →</a>
+                    </div>
+                    <div class="flex gap-3">
+                        ${p.alertas_criticos > 0 ? `<span class="px-2 py-1 bg-red-50 text-red-700 text-sm rounded-lg">🔴 ${p.alertas_criticos} alertas críticos</span>` : ''}
+                        ${p.alertas_atencao > 0 ? `<span class="px-2 py-1 bg-yellow-50 text-yellow-700 text-sm rounded-lg">🟡 ${p.alertas_atencao} pontos de atenção</span>` : ''}
+                        ${p.recomendacoes > 0 ? `<span class="px-2 py-1 bg-green-100 text-green-700 text-sm rounded-lg">✅ ${p.recomendacoes} recomendações</span>` : ''}
+                    </div>
+                    ${p.result_summary ? `<p class="text-sm text-green-700 mt-2">${p.result_summary}</p>` : ''}
+                </div>`;
+
+            btn.disabled = false;
+            btn.textContent = '🔄 Nova Auditoria';
+            btn.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition text-sm font-semibold';
+        } else if (p.status === 'error') {
+            banner.innerHTML = `
+                <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">❌</span>
+                            <span class="font-semibold text-red-800">Erro na auditoria</span>
+                        </div>
+                        <a href="/admin/pipeline" class="text-sm text-red-600 hover:text-red-800 font-medium">Ver detalhes →</a>
+                    </div>
+                </div>`;
+
+            btn.disabled = false;
+            btn.textContent = '🔄 Tentar Novamente';
+            btn.className = 'bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition text-sm font-semibold';
+        }
+    } catch (err) {
+        console.error('Erro ao verificar pipeline:', err);
+    }
+}
+
+// Verificar status ao carregar a página
+document.addEventListener('DOMContentLoaded', checkPipelineStatus);
+</script>
+{% endblock %}

@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+condominios/*/documentos/
+condominios/*/relatorios/
+outputs/
+*.pdf
+data/
+logs/

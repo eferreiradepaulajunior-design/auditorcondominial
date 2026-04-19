@@ -1,0 +1,34 @@
+{
+  "skills": [
+    {
+      "name": "financial",
+      "folder": "financial",
+      "description": "Análise financeira de balancetes condominiais",
+      "agents": ["context_agent", "financial_agent", "investment_agent"]
+    },
+    {
+      "name": "contracts",
+      "folder": "contracts",
+      "description": "Análise e validação de contratos condominiais",
+      "agents": ["contracts_agent"]
+    },
+    {
+      "name": "maintenance",
+      "folder": "maintenance",
+      "description": "Análise de manutenções e serviços condominiais",
+      "agents": ["maintenance_agent"]
+    },
+    {
+      "name": "compliance",
+      "folder": "compliance",
+      "description": "Verificação de conformidade legal condominial",
+      "agents": ["compliance_agent"]
+    },
+    {
+      "name": "meta",
+      "folder": "meta",
+      "description": "Criação dinâmica de novos agentes e skills",
+      "agents": ["meta_agent"]
+    }
+  ]
+}

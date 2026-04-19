@@ -1,0 +1,26 @@
+{
+  "nome": "Parque Colibri",
+  "cnpj": "33.690.478/0001-40",
+  "endereco": "Rua Alagoas, 477 - Iguaçu - Araucária/PR",
+  "unidades": 224,
+  "administradora": "Araucária Administradora de Condomínios",
+  "sindico_atual": "Thiago dos Santos Gomes",
+  "garantidora": "Condoplus Soluções de Cobrança Condominial",
+
+  "limites_aprovacao": {
+    "pix_sem_contrato_alerta": 500.00,
+    "exige_3_orcamentos": 1500.00,
+    "exige_aprovacao_assembleia": 6000.00
+  },
+
+  "agentes": {
+    "context_agent":     { "provider": "gemini",    "model": "gemini-3-flash-preview" },
+    "financial_agent":   { "provider": "gemini",    "model": "gemini-3.1-pro-preview" },
+    "contracts_agent":   { "provider": "anthropic", "model": "claude-opus-4-5" },
+    "maintenance_agent": { "provider": "groq",      "model": "llama-3.3-70b-versatile" },
+    "investment_agent":  { "provider": "groq",      "model": "llama-3.3-70b-versatile" },
+    "compliance_agent":  { "provider": "anthropic", "model": "claude-opus-4-5" },
+    "orchestrator":      { "provider": "gemini",    "model": "gemini-3.1-pro-preview" },
+    "meta_agent":        { "provider": "anthropic", "model": "claude-opus-4-5" }
+  }
+}
