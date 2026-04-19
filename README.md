@@ -41,7 +41,42 @@ Um **sistema inteligente de auditoria condominial** que utiliza uma equipe de **
 
 ---
 
-## 🚀 Início Rápido
+## 🚀 Deploy
+
+### Ambiente Local
+
+```bash
+# Simples e elegante
+uvicorn app:app --reload
+
+# Ou com argumentos customizados
+python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Vercel (Serverless Cloud)
+
+Para fazer deploy na Vercel:
+
+1. **Fazer commit das mudanças**
+   ```bash
+   git add .
+   git commit -m "Deploy: Prepare for Vercel"
+   git push origin main
+   ```
+
+2. **Importar no Vercel**
+   - Acessar [vercel.com](https://vercel.com)
+   - Clicar "Add New" → "Project"
+   - Selecionar repositório `auditorcontabil`
+   - Clicar "Deploy"
+
+3. **Configurar variáveis de ambiente**
+   - Project Settings → Environment Variables
+   - Adicionar: `GEMINI_API_KEY`, `OPENAI_API_KEY`, `GROQ_API_KEY`, `ANTHROPIC_API_KEY`
+
+> ⚠️ **Nota**: Vercel Free tem limite de 10 segundos. Para auditorias completas, considere upgrade para **Pro** (60s) ou **hosting em VPS**. Ver [DEPLOY_VERCEL.md](DEPLOY_VERCEL.md) para detalhes.
+
+---
 
 ### Pré-requisitos
 

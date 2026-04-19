@@ -5,6 +5,7 @@ Serve o frontend web com chat, painel admin e WebSocket.
 
 import sys
 from pathlib import Path
+from datetime import datetime
 from fastapi import FastAPI, Request, Form
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -147,6 +148,20 @@ async def startup():
     (ROOT / "logs").mkdir(exist_ok=True)
     logger.info("🏢 Auditor Contábil Web iniciado")
     logger.info(f"   Acesse: http://localhost:8000")
+
+
+# ── Health Check ─────────────────────────────────────────
+
+@app.get("/health")
+async def health():
+    """Endpoint para health checks (Vercel, load balancers, etc)."""
+    return {"status": "ok", "service": "Auditor Contábil"}
+
+
+@app.get("/api/health")
+async def api_health():
+    """API health endpoint."""
+    return {"status": "ok", "timestamp": datetime.now().isoformat()}
 
 
 # ── Para rodar diretamente ───────────────────────────────────────
