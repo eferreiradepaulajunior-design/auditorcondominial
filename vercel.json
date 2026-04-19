@@ -1,13 +1,5 @@
 {
   "buildCommand": "pip install -r requirements.txt",
-  "outputDirectory": "public",
-  "framework": "python",
-  "functions": {
-    "api/app.py": {
-      "memory": 2048,
-      "maxDuration": 10
-    }
-  },
   "rewrites": [
     {
       "source": "/(.*)",
