@@ -27,7 +27,7 @@ websockets==13.0
 jinja2==3.1.4
 python-multipart==0.0.9
 itsdangerous==2.1.2
-bcrypt==4.1.4
+bcrypt>=4.2.0
 
 # Armazenamento de memória vetorial (fase 2)
 # chromadb>=0.4.0
