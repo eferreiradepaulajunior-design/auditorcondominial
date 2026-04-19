@@ -3,12 +3,21 @@ Banco de dados SQLite para o frontend web.
 Armazena usuários, conversas, mensagens e configurações.
 """
 
+import os
 import sqlite3
 import json
 from pathlib import Path
 from datetime import datetime
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "auditoria.db"
+# Em ambiente serverless (Vercel) o filesystem é read-only, exceto /tmp.
+# IMPORTANTE: dados em /tmp NÃO persistem entre invocações ou cold starts.
+# Para uso em produção no Vercel, troque para um banco gerenciado (Vercel Postgres, Turso, Neon, etc.).
+_IS_SERVERLESS = os.environ.get("VERCEL") == "1" or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") is not None
+
+if _IS_SERVERLESS:
+    DB_PATH = Path("/tmp/auditoria.db")
+else:
+    DB_PATH = Path(__file__).resolve().parent.parent / "data" / "auditoria.db"
 
 
 def get_db() -> sqlite3.Connection:

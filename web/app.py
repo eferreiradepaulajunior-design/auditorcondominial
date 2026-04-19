@@ -3,6 +3,7 @@ Aplicação FastAPI principal.
 Serve o frontend web com chat, painel admin e WebSocket.
 """
 
+import os
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -24,9 +25,18 @@ from web.routes.chat import router as chat_router
 from web.routes.pipeline import router as pipeline_router
 
 # ── Logging ──────────────────────────────────────────────────────
+# Detecta ambiente serverless (Vercel) onde o filesystem é read-only
+IS_SERVERLESS = os.environ.get("VERCEL") == "1" or os.environ.get("AWS_LAMBDA_FUNCTION_NAME") is not None
+LOG_DIR = Path("/tmp/logs") if IS_SERVERLESS else (ROOT / "logs")
+
 logger.remove()
 logger.add(sys.stderr, level="INFO", format="{time:HH:mm:ss} | {level:<7} | {message}")
-logger.add(str(ROOT / "logs" / "web_{time:YYYYMMDD}.log"), rotation="1 day", level="DEBUG")
+try:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    logger.add(str(LOG_DIR / "web_{time:YYYYMMDD}.log"), rotation="1 day", level="DEBUG")
+except (OSError, PermissionError):
+    # Filesystem read-only ou sem permissão: mantém apenas stderr
+    pass
 
 # ── App ──────────────────────────────────────────────────────────
 app = FastAPI(title="Auditor Contábil", docs_url=None, redoc_url=None)
@@ -144,10 +154,11 @@ async def logout():
 
 @app.on_event("startup")
 async def startup():
-    init_db()
-    (ROOT / "logs").mkdir(exist_ok=True)
+    try:
+        init_db()
+    except Exception as e:
+        logger.error(f"Erro ao inicializar DB: {e}")
     logger.info("🏢 Auditor Contábil Web iniciado")
-    logger.info(f"   Acesse: http://localhost:8000")
 
 
 # ── Health Check ─────────────────────────────────────────
