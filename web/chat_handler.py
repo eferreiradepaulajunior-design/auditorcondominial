@@ -157,7 +157,7 @@ def _handle_delegation(response_text: str) -> str:
             system = _build_system_prompt(agent_id)
             prompt = f"O Gestor Carlos pediu que você analise o seguinte:\n\n{task}"
 
-            llm_response = provider.complete(prompt=prompt, system_prompt=system)
+            llm_response = provider.complete(system_prompt=system, user_message=prompt)
             agent_name = get_profile(agent_id)["name"]
 
             # Substitui o marker pela resposta do agente
@@ -253,8 +253,8 @@ async def process_chat_message(
         # Chamar LLM em thread separada (não bloquear o event loop)
         llm_response = await asyncio.to_thread(
             provider.complete,
-            prompt=full_prompt,
-            system_prompt=system_prompt
+            system_prompt=system_prompt,
+            user_message=full_prompt,
         )
 
         response_text = llm_response.content
